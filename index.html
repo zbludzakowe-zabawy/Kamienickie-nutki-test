@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Porządkowanie nut z Dysku Google: lista plików, własne nazwy, dopasowanie do spisu pieśni.">
+  <meta name="theme-color" content="#24476b">
+  <title>Kamienickie Nutki – TEST</title>
+  <meta name="application-name" content="Kamienickie Nutki – TEST">
+  <meta name="apple-mobile-web-app-title" content="Nutki TEST">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=2">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
+  <link rel="stylesheet" href="style.css">
+  <script src="js/config.js"></script>
+  <script src="js/mode.js"></script>
+  <!-- Google Tag Manager – ładowany dopiero po zgodzie (baner zgody) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var KEY = 'zz-analytics-consent', GTM = 'GTM-PKVQBH86';
+      var get = function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
+      var set = function (v) { try { localStorage.setItem(KEY, v); } catch (e) {} };
+      function load() {
+        if (window.__gtmLoaded) return; window.__gtmLoaded = true;
+        gtag('js', new Date());
+        dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+        var s = document.createElement('script'); s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM;
+        document.head.appendChild(s);
+      }
+      function banner() {
+        if (document.getElementById('zz-consent')) return;
+        var pl = /^pl/i.test(navigator.language || '');
+        var t = pl
+          ? ['Ta strona używa plików cookie Google Analytics, żeby liczyć odwiedziny. Zgadzasz się?', 'Zgadzam się', 'Nie, dziękuję']
+          : ['This site uses Google Analytics cookies to count visits. Do you agree?', 'Accept', 'No, thanks'];
+        var st = document.createElement('style');
+        st.textContent = '#zz-consent{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:2147483647;max-width:520px;margin:0 auto;padding:14px 16px;border-radius:12px;background:#fff;color:#222;box-shadow:0 4px 24px rgba(0,0,0,.25);font:15px/1.4 system-ui,sans-serif}'
+          + '#zz-consent p{margin:0 0 10px}#zz-consent .zz-b{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}'
+          + '#zz-consent button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid #888;background:transparent;color:inherit;cursor:pointer}'
+          + '#zz-consent button.zz-ok{background:#2563eb;border-color:#2563eb;color:#fff}'
+          + '@media (prefers-color-scheme:dark){#zz-consent{background:#2a2a2e;color:#eee}}';
+        var d = document.createElement('div');
+        d.id = 'zz-consent'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-live', 'polite');
+        d.innerHTML = '<p></p><div class="zz-b"><button type="button" class="zz-no"></button><button type="button" class="zz-ok"></button></div>';
+        d.querySelector('p').textContent = t[0];
+        d.querySelector('.zz-ok').textContent = t[1];
+        d.querySelector('.zz-no').textContent = t[2];
+        d.querySelector('.zz-ok').onclick = function () { set('granted'); d.remove(); load(); };
+        d.querySelector('.zz-no').onclick = function () { set('denied'); d.remove(); };
+        document.head.appendChild(st); document.body.appendChild(d);
+      }
+      // Zmiana decyzji: window.zzConsent() pokazuje baner ponownie.
+      window.zzConsent = function () { try { localStorage.removeItem(KEY); } catch (e) {} banner(); };
+      var c = get();
+      if (c === 'granted') load();
+      else if (c !== 'denied') {
+        if (document.body) banner(); else document.addEventListener('DOMContentLoaded', banner);
+      }
+    })();
+  </script>
+  <!-- End Google Tag Manager -->
+</head>
+<body>
+  <!-- tylko w wersji testowej (KN_CONFIG.env) – pokazuje app.js -->
+  <div id="test-bar" class="test-bar" hidden>
+    <strong>WERSJA TESTOWA</strong>
+    <span class="test-bar-note">osobne dane – produkcja bez zmian</span>
+    <button class="btn light admin-only" id="test-copy" title="Zastąp dane wersji testowej kopią danych z głównej aplikacji (plik produkcji tylko odczytujemy)">Skopiuj dane z produkcji</button>
+    <a id="test-prod" href="/Kamienickie-nutki/">Główna aplikacja ↗</a>
+  </div>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon-192.png?v=2" alt="" width="32" height="32">
+      <span>Kamienickie Nutki</span>
+    </div>
+    <div class="top-right admin-only">
+      <span id="sync" class="sync" hidden></span>
+      <button class="btn light" id="btn-connect">Połącz z Dyskiem</button>
+      <div class="account" id="account" hidden>
+        <span class="who" id="who"></span>
+        <button class="btn ghost" id="btn-history" title="Odzyskaj spisy i programy uroczystości ze starszych wersji danych zapisanych na Dysku">Odzyskaj…</button>
+        <button class="btn ghost" id="btn-disconnect" title="Rozłącz z Dyskiem Google (tryb administratora zostaje otwarty)">Rozłącz</button>
+      </div>
+      <button class="btn ghost" id="btn-to-guest" title="Zobacz aplikację tak jak chórzyści">Widok chórzysty</button>
+      <button class="btn ghost" id="btn-logout" title="Zamknij tryb administratora na tym urządzeniu">Wyloguj</button>
+    </div>
+  </header>
+
+  <nav class="tabs admin-only" role="tablist">
+    <button role="tab" data-tab="files">Nuty na Dysku</button>
+    <button role="tab" data-tab="catalog">Katalog</button>
+    <button role="tab" data-tab="songs">Spisy pieśni</button>
+    <button role="tab" data-tab="events">Uroczystości</button>
+    <button role="tab" data-tab="choir">Dla chórzystów <span class="tab-badge" id="rep-badge" hidden title="Nowe zgłoszenia od chórzystów"></span></button>
+  </nav>
+
+  <section class="card lock" id="admin-lock">
+    <img src="icons/icon-192.png?v=2" alt="" width="72" height="72">
+    <h2>Tryb administratora</h2>
+    <p>Zaloguj się kontem Google dyrygenta. Wystarczy raz na tym urządzeniu. Potem możesz pracować także bez połączenia z Dyskiem.</p>
+    <button class="btn primary" id="btn-unlock">Zaloguj się kontem Google</button>
+    <p class="muted small">Wejść mogą tylko konta dopuszczone w ustawieniach aplikacji w Google Cloud.</p>
+    <p><button type="button" class="linklike" id="btn-lock-guest">‹ Przejdź do śpiewników (chórzysta)</button></p>
+  </section>
+
+  <main class="admin-only">
+   <div data-panel="files" class="panel">
+    <section class="card" id="welcome" hidden>
+      <h2>Witaj!</h2>
+      <p>Aplikacja pomoże uporządkować nuty z Twojego Dysku Google. Pliki na Dysku pozostają nietknięte. Nazwy nadane tutaj służą tylko do pracy w aplikacji.</p>
+      <ol>
+        <li><b>Połącz z Dyskiem</b> i zgódź się na dostęp. Przy pierwszym razie Google ostrzeże, że aplikacja jest niezweryfikowana. Kliknij <i>Zaawansowane → Przejdź do KamienickieNutki</i>.</li>
+        <li><b>Dodaj folder</b>, w którym trzymasz nuty. Może ich być kilka.</li>
+        <li>Aplikacja <b>przeskanuje</b> folder i pokaże wszystkie PDF-y i obrazy w takim układzie jak na Dysku.</li>
+      </ol>
+      <button class="btn primary" id="btn-welcome-start">Wybierz folder z nutami</button>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Foldery z nutami</h2></div>
+      <ul class="root-list" id="root-list"></ul>
+      <p class="muted" id="scan-info" aria-live="polite"></p>
+      <div class="actions">
+        <button class="btn" id="btn-add-folder">+ Dodaj folder</button>
+        <button class="btn primary" id="btn-scan">Skanuj Dysk</button>
+        <button class="btn" id="btn-dups" title="Szukaj powtórzonych nut na podstawie ostatniego skanowania i Twoich nazw" disabled>Szukaj duplikatów</button>
+      </div>
+    </section>
+
+    <section class="card" id="dups-card" hidden>
+      <div class="card-head"><h2>Porządkowanie: duplikaty</h2>
+        <span class="ev-tools"><button class="btn small" id="dups-again" title="Szukaj ponownie – Twoje decyzje zostaną zachowane">↻ Szukaj ponownie</button><button class="btn small" id="dups-hide">Zwiń</button></span></div>
+      <p class="muted small">Najpierw podejmij decyzje tutaj – niepotrzebne pliki trafią na listę „Do sprzątnięcia na Dysku”. Aplikacja nie usuwa plików:
+        usuwasz je sam (linki 📁 do folderu i <svg class="ico-drive" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-drive"/></svg> do pliku), a po „Skanuj Dysk” usunięte pliki odhaczą się same. Decyzje i lista są zapamiętane.</p>
+      <p class="muted small" id="dups-info"></p>
+      <div class="cleanup" id="cleanup">
+        <div class="cleanup-head">
+          <h3 class="sub">Do sprzątnięcia na Dysku</h3><span class="muted small" id="cleanup-count"></span>
+          <span class="cleanup-tools">
+            <label class="check small"><input type="checkbox" id="cleanup-showdone"> pokaż zrobione</label>
+            <button class="btn small" id="cleanup-html" title="Strona do otwarcia w przeglądarce: pliki pogrupowane według folderów, z linkami">⬇ Pobierz listę (strona)</button>
+            <button class="btn small" id="cleanup-csv" title="Plik dla Excela / LibreOffice">⬇ CSV</button>
+          </span>
+        </div>
+        <div id="cleanup-list"></div>
+      </div>
+      <h3 class="sub">Grupy możliwych duplikatów</h3>
+      <div class="filters" id="dups-filters" role="group" aria-label="Pokaż">
+        <button class="fchip check" data-v="open">Do przejrzenia <b>0</b></button>
+        <button class="fchip have" data-v="done">Rozstrzygnięte <b>0</b></button>
+        <button class="fchip" data-v="all">Wszystkie <b>0</b></button>
+      </div>
+      <input type="search" id="dups-q" class="sb-q" placeholder="Szukaj w duplikatach…" autocomplete="off" aria-label="Szukaj w duplikatach">
+      <div id="dups-list" class="dups"></div>
+    </section>
+
+    <section class="card" id="files-card" hidden>
+      <div class="card-head"><h2>Nuty</h2><span class="muted" id="files-summary"></span></div>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Szukaj po nazwie…" autocomplete="off" aria-label="Szukaj nut">
+        <select id="filter" aria-label="Pokaż">
+          <option value="all">Wszystkie</option>
+          <option value="unnamed">Bez własnej nazwy</option>
+          <option value="named">Z własną nazwą</option>
+          <option value="new">Nowe od ostatniego skanu</option>
+          <option value="unassigned">Nieprzypisane do żadnego śpiewnika</option>
+          <option value="remove">Duplikaty do usunięcia</option>
+          <option value="flagged">Oznaczone: „to nie nuty” i „nieistotne”</option>
+        </select>
+        <div class="toolbar-btns">
+          <button class="btn small" id="btn-expand">Rozwiń wszystko</button>
+          <button class="btn small" id="btn-collapse">Zwiń</button>
+          <button class="btn small" id="btn-export" title="Zapisz widoczną listę plików (do Excela / LibreOffice)">⬇ Pobierz listę</button>
+        </div>
+      </div>
+      <p class="hint muted unassigned-hint" id="unassigned-hint" hidden>Pliki, których nie ma w żadnym spisie pieśni jako „Są nuty”.
+        Pliki tylko zaproponowane („Do sprawdzenia”) też tu są – po zatwierdzeniu w „Spisach pieśni” znikną z tej listy. Programy uroczystości nie są brane pod uwagę.</p>
+      <p class="hint muted">✎ przy pliku (albo stuknięcie nazwy): własna nazwa, „to nie nuty”, „nieistotne”, „Edytuj w Katalogu” (obrót, pozostałe strony). <span class="nv-note-ico" aria-hidden="true">♪</span> = podgląd nut (w oknie ✎ jest też <svg class="ico-drive" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-drive"/></svg> – otwórz na Dysku Google). Duszek przy pliku albo folderze: <svg class="ico-ghost" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ghost"/></svg> (same kontury) – kliknij, żeby oznaczyć jako nieistotne (cały folder razem z zawartością); <svg class="ico-ghost on" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ghost"/></svg> = oznaczone, ↻ odświeża tylko ten folder.</p>
+      <div class="tree" id="tree"></div>
+    </section>
+   </div>
+
+
+   <div data-panel="catalog" class="panel" hidden>
+    <section class="card" id="cat-card">
+      <div class="card-head"><h2>Katalog nut</h2>
+        <span class="ev-tools"><span class="muted small" id="cat-sum"></span><button class="btn small" id="cat-tags-btn" title="Dodaj, zmień nazwę albo usuń cechy">🏷 Cechy…</button></span></div>
+      <p class="muted small" id="cat-empty" hidden>Katalog powstaje z przeskanowanych nut. Najpierw dodaj folder i kliknij „Skanuj Dysk” w zakładce „Nuty na Dysku”.</p>
+      <div id="cat-body">
+        <p class="hint muted" style="margin-top:0">Każda pozycja to jeden utwór (jeden albo kilka plików – stron). Katalog zbudował się sam: z pieśni w spisach i z „Pozostałych nut”.
+          Kliknij tytuł, żeby wpisać autora tekstu, muzykę i cechy. Zaznacz kilka pozycji, żeby nadać cechę wszystkim naraz albo połączyć je w jeden utwór.</p>
+        <div class="toolbar">
+          <input type="search" id="cat-q" placeholder="Szukaj: tytuł, autor tekstu, muzyka, nazwa pliku…" autocomplete="off" aria-label="Szukaj w katalogu">
+          <select id="cat-filter" aria-label="Pokaż">
+            <option value="all">Wszystkie</option>
+            <option value="notags">Bez cech</option>
+            <option value="nolyrics">Bez autora tekstu</option>
+            <option value="nomusic">Bez kompozytora</option>
+            <option value="nobook">Spoza spisów pieśni</option>
+            <option value="nofiles">Bez plików</option>
+          </select>
+          <label class="check small cat-ign"><input type="checkbox" id="cat-showign"> pokaż nieistotne <b id="cat-ign-n"></b></label>
+        </div>
+        <div class="filters cat-tagfilter" id="cat-tagfilter" role="group" aria-label="Cechy"></div>
+        <div class="cat-bulk" id="cat-bulk">
+          <label class="check small" title="Zaznacz wszystkie widoczne pozycje"><input type="checkbox" id="cat-all"> <span id="cat-sel">zaznacz</span></label>
+          <span class="cat-bulk-acts" id="cat-bulk-acts">
+            <select id="cat-addtag" aria-label="Dodaj cechę zaznaczonym"></select>
+            <select id="cat-rmtag" aria-label="Usuń cechę zaznaczonym"></select>
+            <button class="btn small" id="cat-merge" title="Kilka pozycji to jeden utwór (np. osobne strony) – połącz w jedną">⧉ Połącz</button>
+            <button class="btn small" id="cat-ign" title="Oznacz pliki zaznaczonych pozycji jako nieistotne"><svg class="ico-ghost" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ghost"/></svg> Nieistotne</button>
+            <button class="btn small" id="cat-unign" title="Usuń oznaczenie „nieistotne”">Przywróć</button>
+            <button class="btn small" id="cat-export" title="Zapisz widoczną listę (Excel / LibreOffice)">⬇ CSV</button>
+          </span>
+        </div>
+        <div class="works" id="cat-list"></div>
+        <p class="muted small" id="cat-more"></p>
+      </div>
+    </section>
+   </div>
+
+   <div data-panel="songs" class="panel" hidden>
+    <section class="card">
+      <div class="card-head">
+        <h2>Spisy pieśni</h2>
+        <select id="sb-select" aria-label="Wybierz spis" hidden></select>
+      </div>
+      <div id="sb-empty">
+        <p>Wczytaj spis pieśni (np. spis treści śpiewnika), a aplikacja sprawdzi, do których pozycji masz nuty na Dysku. Możesz też założyć pusty spis i dopisać pozycje ręcznie („+ Nowy spis”).</p>
+        <p class="muted small">Obsługiwane: <b>.odt</b>, <b>.docx</b>, <b>.txt</b> i Dokumenty Google. Każda pozycja w osobnej linijce, najlepiej z numerem, np. „12&lt;tab&gt;Tytuł”.
+          Jeśli spis powtarza się w pliku (np. druga strona alfabetycznie), powtórzenia zostaną pominięte.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-import="drive">Wczytaj spis z Dysku</button>
+        <button class="btn" data-import="local">Wczytaj z komputera</button>
+        <button class="btn" id="sb-new" title="Pusty spis – pozycje dopiszesz ręcznie („+ Dodaj pozycję”)">+ Nowy spis</button>
+        <input type="file" id="sb-file" accept=".odt,.docx,.txt" hidden>
+      </div>
+    </section>
+
+    <section class="card" id="sb-content" hidden>
+      <div class="sb-head">
+        <input id="sb-name" class="sb-name" aria-label="Nazwa spisu" maxlength="120">
+        <label class="sb-code" title="Do 3 znaków, np. Z (żółty), N (niebieski). W programach uroczystości przy tytule pieśni pojawi się np. [N 34].">Identyfikator
+          <input id="sb-code" maxlength="3" autocomplete="off" spellcheck="false"></label>
+        <div class="sb-tools">
+          <button class="btn small primary" id="sb-confirm-all" title="Zatwierdź wszystkie dopasowania automatyczne">✓ Zatwierdź pewne</button>
+          <button class="btn small" id="sb-add-open" title="Dopisz pozycję do tego spisu (plik spisu na Dysku się nie zmienia)">+ Dodaj pozycję</button>
+          <button class="btn small" id="sb-reload" title="Wczytaj poprawiony plik spisu – Twoje dopasowania zostaną zachowane">↻ Wczytaj ponownie…</button>
+          <button class="btn small" id="sb-rematch" title="Dopasuj jeszcze raz pozycje niezatwierdzone">↻ Dopasuj ponownie</button>
+          <button class="btn small" id="sb-delete">Usuń spis</button>
+        </div>
+      </div>
+      <p class="muted small" id="sb-source"></p>
+      <div class="filters" id="sb-filters" role="group" aria-label="Pokaż">
+        <button class="fchip" data-f="all">Wszystkie <b>0</b></button>
+        <button class="fchip have" data-f="have">✓ Są nuty <b>0</b></button>
+        <button class="fchip check" data-f="check">? Do sprawdzenia <b>0</b></button>
+        <button class="fchip missing" data-f="missing">✕ Brak <b>0</b></button>
+      </div>
+      <input type="search" id="sb-q" class="sb-q" placeholder="Szukaj w spisie (tytuł lub numer)…" autocomplete="off" aria-label="Szukaj w spisie">
+      <div class="sb-add" id="sb-add" hidden>
+        <input id="sb-add-no" class="sb-add-no" maxlength="6" placeholder="Nr" aria-label="Numer nowej pozycji">
+        <input id="sb-add-title" maxlength="200" placeholder="Tytuł nowej pozycji" aria-label="Tytuł nowej pozycji">
+        <button class="btn small primary" id="sb-add-btn">Dodaj</button>
+        <button class="btn small" id="sb-add-close" title="Schowaj">Gotowe</button>
+      </div>
+      <p class="hint muted">„Zgadza się” zatwierdza propozycję. Przy pozycjach „do sprawdzenia” zaznacz jeden albo kilka plików (np. strony 1 i 2) i kliknij „Zatwierdź zaznaczone”. Plik bez własnej nazwy dostaje wtedy tytuł ze spisu. Kliknięcie w plik otwiera podgląd nut.</p>
+      <div class="songs" id="sb-list"></div>
+    </section>
+   </div>
+   <div data-panel="events" class="panel" hidden>
+    <section class="card" id="ev-list-card">
+      <div class="card-head"><h2>Uroczystości</h2><span class="ev-head-btns"><button class="btn" id="ev-import" title="Np. Triduum: kilka dni w jednym pliku .odt / .docx / .txt">📄 Wczytaj z pliku…</button><button class="btn primary" id="ev-new">+ Nowy program</button></span></div>
+      <input type="file" id="ev-file" accept=".odt,.docx,.txt" hidden>
+      <p class="muted small">Program na konkretną uroczystość: pieśni ułożone według części mszy, z krótkimi uwagami.
+        Po aktualizacji w zakładce „Dla chórzystów” chórzyści zobaczą go na telefonie i pobiorą PDF.</p>
+      <p class="muted small">„📄 Wczytaj z pliku…” – dokument z tabelą: wiersz z nazwą dnia (np. „Wielki Czwartek”), potem wiersze „część mszy | pieśń”
+        (pusta część = ta sama co wyżej; „/” = pieśni do wyboru; „(!)”, „?”, „[1]”, „(ew)” trafiają do uwag). Z jednego pliku powstaje osobny program na każdy dzień.
+        Może też być zwykły tekst: w pierwszej linijce nazwa (np. „Pasterka 2026”), potem pieśń w linijce, np. „we: Wśród nocnej ciszy”, „Kyrie - Missa Noel”,
+        „KOLĘDOWANIE:” (nowa część); linijka bez oznaczenia = ta sama część co wyżej.</p>
+      <div id="ev-list"></div>
+    </section>
+    <section class="card" id="ev-editor" hidden>
+      <div class="ev-bar">
+        <button class="btn small" id="ev-back">‹ Wszystkie programy</button>
+        <span class="ev-bar-right"><button class="btn small" id="ev-copy">Kopiuj</button><button class="btn small" id="ev-delete">Usuń</button></span>
+      </div>
+      <div class="ev-meta">
+        <input id="ev-name" class="sb-name" maxlength="120" placeholder="Nazwa uroczystości" aria-label="Nazwa uroczystości">
+        <label class="ev-date">Data <input type="date" id="ev-date"></label>
+      </div>
+      <p class="muted small" id="ev-state"></p>
+      <div id="ev-parts"></div>
+      <div class="ev-addpart">
+        <input id="ev-newpart" maxlength="60" placeholder="Nowa część, np. Odnowienie przyrzeczeń" aria-label="Nazwa nowej części">
+        <button class="btn" id="ev-addpart">+ Dodaj część</button>
+      </div>
+    </section>
+   </div>
+
+   <div data-panel="choir" class="panel" hidden>
+    <section class="card" id="rep-card">
+      <div class="card-head"><h2>⚠ Zgłoszenia od chórzystów</h2><span class="small" id="rep-state"></span></div>
+      <p class="muted small" style="margin-top:0">Chórzyści przy otwartych nutach mogą kliknąć „⚠ Zgłoś problem” (np. nie te nuty, trzeba obrócić, nieczytelne).
+        Zgłoszenia dotyczące tego samego pliku są połączone. ✎ przy pliku otwiera edycję (nazwa, obrót, „to nie nuty”, „nieistotne”).</p>
+      <div class="rep-bar">
+        <button class="btn" id="rep-fetch">↻ Sprawdź zgłoszenia</button>
+        <label class="check small"><input type="checkbox" id="rep-showdone"> pokaż też załatwione</label>
+        <span class="muted small" id="rep-info"></span>
+      </div>
+      <div id="rep-list" class="rep-list"></div>
+      <details class="rep-setup" id="rep-setup">
+        <summary>Ustawienia zgłoszeń (Formularz Google)</summary>
+        <ol class="rep-howto small">
+          <li>Wejdź na <a href="https://forms.google.com" target="_blank" rel="noopener">forms.google.com</a> → <b>Pusty formularz</b>. Tytuł np. „Zgłoszenia – Kamienickie Nutki”.</li>
+          <li>Pierwsze pytanie: wpisz „Zgłoszenie”, a z listy typów po prawej wybierz <b>Długa odpowiedź</b> (w starszych wersjach: „Akapit”). Innych pytań nie dodawaj.</li>
+          <li>Zakładka <b>Ustawienia → Odpowiedzi</b>: „Zbieraj adresy e-mail” – <b>Nie zbieraj</b>; „Ogranicz do 1 odpowiedzi” – <b>wyłączone</b>
+            (inaczej chórzyści musieliby się logować).</li>
+          <li>Kliknij fioletowy przycisk <b>Opublikuj</b> (prawy górny róg) – bez tego formularz nie przyjmuje odpowiedzi.
+            Jeśli Google pyta, kto może odpowiadać, wybierz <b>każdą osobę, która ma link</b>.</li>
+          <li>Zakładka <b>Odpowiedzi → Link do Arkuszy</b> → „Utwórz nowy arkusz” → <b>Utwórz</b>. Otworzy się arkusz – skopiuj jego adres z paska przeglądarki i wklej poniżej.</li>
+          <li>Wróć do formularza: menu <b>⋮</b> (obok „Opublikuj”) → <b>Wstępne wypełnienie formularza</b>. W polu „Zgłoszenie” wpisz „x”,
+            na dole kliknij <b>Pobierz link</b>, potem <b>Kopiuj link</b> – wklej poniżej.</li>
+          <li>Kliknij <b>Zapisz</b>, potem <b>Wyślij zgłoszenie testowe</b> i <b>↻ Sprawdź zgłoszenia</b> – powinno pojawić się „Zgłoszenie testowe”.</li>
+        </ol>
+        <label class="ed-field"><span>Link do arkusza z odpowiedziami</span>
+          <input id="rep-sheet" type="url" placeholder="https://docs.google.com/spreadsheets/d/…/edit" autocomplete="off"></label>
+        <label class="ed-field"><span>Link do wstępnie wypełnionego formularza</span>
+          <input id="rep-form" type="url" placeholder="https://docs.google.com/forms/d/e/…/viewform?usp=pp_url&entry.…=x" autocomplete="off"></label>
+        <div class="actions">
+          <button class="btn primary" id="rep-save">Zapisz</button>
+          <button class="btn" id="rep-test">Wyślij zgłoszenie testowe</button>
+        </div>
+        <p class="muted small">Link do formularza trafia tylko do zaszyfrowanego katalogu – zgłaszać mogą osoby, które znają PIN.</p>
+      </details>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Dla chórzystów</h2></div>
+      <p>Chórzyści otwierają aplikację na telefonie <b>bez logowania</b>. Po wpisaniu PIN-u widzą wszystkie spisy pieśni,
+        otwierają nuty na cały ekran i mogą pobrać PDF z całym śpiewnikiem.</p>
+      <p class="muted small">Publikacja kopiuje potrzebne nuty do folderu „Kamienickie Nutki / Dla chórzystów” na Twoim Dysku (dostęp dla każdego, kto ma link).
+        Lista pieśni jest zaszyfrowana PIN-em. Twoje oryginalne pliki pozostają prywatne. Chórzyści widzą tylko pozycje „Są nuty”.</p>
+      <div class="pin-row">
+        <label for="pub-pin">PIN dla chórzystów</label>
+        <input id="pub-pin" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off">
+        <button class="btn" id="pub-pin-save">Zapisz PIN</button>
+      </div>
+      <div class="pub-two">
+        <div class="pub-box">
+          <h3>📋 Listy pieśni w aplikacji</h3>
+          <p class="muted small">Szybko – kilka sekund. Chórzyści od razu widzą w aplikacji nowe pozycje, poprawki i nuty. PDF-y zostają bez zmian.</p>
+          <p class="pub-sum" id="pub-list-sum"></p>
+          <div class="actions">
+            <button class="btn primary" id="pub-go">Opublikuj dla chórzystów</button>
+            <button type="button" class="linklike" id="pub-force" hidden title="Np. po zmianie własnych nazw plików">Aktualizuj mimo to</button>
+          </div>
+        </div>
+        <div class="pub-box">
+          <h3>📄 PDF-y do pobrania</h3>
+          <p class="muted small">Wolniej – aplikacja pobiera wszystkie nuty śpiewnika i składa PDF od nowa. Rób to, gdy śpiewnik jest gotowy.
+            Które PDF-y przygotować, zaznaczasz w kolumnie „PDF” poniżej. Przy okazji zaktualizują się też listy pieśni.</p>
+          <p class="pub-sum" id="pub-pdf-sum"></p>
+          <div class="actions"><button class="btn primary" id="pub-pdf-go">Przygotuj PDF-y</button></div>
+        </div>
+      </div>
+      <h3 class="sub">Śpiewniki i programy</h3>
+      <ul class="pub-books" id="pub-books"></ul>
+      <div class="actions">
+        <button class="btn" id="pub-preview" hidden>Podgląd jako chórzysta</button>
+      </div>
+      <div class="pub-progress" id="pub-progress" hidden>
+        <div class="bar"><span id="pub-bar"></span></div>
+        <p class="muted small" id="pub-status" aria-live="polite"></p>
+      </div>
+      <div class="pub-problems" id="pub-problems" hidden></div>
+    </section>
+    <section class="card" id="pub-link-card" hidden>
+      <h2>Link dla chórzystów</h2>
+      <p class="muted small">Wyślij go chórzystom (SMS, grupa). Po otwarciu wpisują PIN i mogą zainstalować aplikację na telefonie.</p>
+      <div class="link-row"><input id="pub-link" readonly aria-label="Link dla chórzystów"><button class="btn" id="pub-copy">Kopiuj</button></div>
+      <p class="muted small" id="pub-info"></p>
+    </section>
+   </div>
+  </main>
+
+  <dialog id="work-dlg" aria-labelledby="wk-head">
+    <form class="picker" method="dialog" id="wk-form">
+      <p class="muted small" style="margin:0" id="wk-head">Pozycja w katalogu</p>
+      <label class="ed-field"><span>Tytuł</span>
+        <input id="wk-title" type="text" maxlength="200" autocomplete="off" required></label>
+      <p class="muted small" id="wk-books" style="margin:0"></p>
+      <div class="wk-two">
+        <label class="ed-field"><span>Autor tekstu</span><input id="wk-lyrics" type="text" maxlength="200" autocomplete="off" list="wk-people"></label>
+        <label class="ed-field"><span>Muzyka</span><input id="wk-music" type="text" maxlength="200" autocomplete="off" list="wk-people"></label>
+      </div>
+      <datalist id="wk-people"></datalist>
+      <div class="ed-field"><span>Cechy</span>
+        <div class="wk-tags" id="wk-tags"></div>
+        <div class="wk-newtag"><input id="wk-newtag" maxlength="40" placeholder="Nowa cecha…" aria-label="Nowa cecha" autocomplete="off"><button type="button" class="btn small" id="wk-newtag-add">+ Dodaj</button></div>
+      </div>
+      <label class="ed-flag"><input type="checkbox" id="wk-ign">
+        <span><b><svg class="ico-ghost" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ghost"/></svg> Nieistotne</b> <span class="muted small">Oznacza wszystkie pliki tej pozycji (jak „nieistotne” w „Nutach na Dysku”). Domyślnie ukryte w katalogu.</span>
+          <span class="small muted" id="wk-ign-why" hidden></span></span></label>
+      <div class="ed-field"><span>Pliki <span class="muted small" id="wk-fcount"></span></span>
+        <ul class="wk-files" id="wk-files"></ul>
+        <div><button type="button" class="btn small" id="wk-add" title="Dołącz kolejny plik (strona, inna wersja). Plik z innej pozycji katalogu = połączenie z tą pozycją, jak ⧉ Połącz">+ Dodaj plik</button></div></div>
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="wk-order" hidden>⇅ Kolejność stron</button>
+        <button class="btn" type="button" id="wk-del" hidden>Usuń pozycję</button>
+        <span style="flex:1"></span>
+        <button class="btn" type="button" id="wk-cancel">Anuluj</button>
+        <button class="btn primary" type="submit">Zapisz</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="tags-dlg" aria-labelledby="tg-head">
+    <div class="picker">
+      <h2 id="tg-head">Cechy w katalogu</h2>
+      <p class="muted small" style="margin:0">Jedna pozycja może mieć kilka cech. Zmiana nazwy zmienia ją wszędzie, usunięcie zdejmuje cechę ze wszystkich pozycji.</p>
+      <ul class="tg-list" id="tg-list"></ul>
+      <div class="wk-newtag"><input id="tg-new" maxlength="40" placeholder="Nowa cecha, np. maryjne" aria-label="Nowa cecha" autocomplete="off"><button type="button" class="btn small" id="tg-add">+ Dodaj cechę</button></div>
+      <div class="dialog-actions"><button class="btn primary" type="button" id="tg-close">Gotowe</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="hist-dlg" aria-labelledby="hs-head">
+    <div class="picker">
+      <h2 id="hs-head">Odzyskaj spisy i programy</h2>
+      <p class="small" style="margin:0"><b>Kiedy tego używać?</b> Tylko gdy spis pieśni albo program uroczystości <b>zniknął bez Twojej wiedzy</b>.
+        Na liście są wszystkie spisy i programy ze starszych wersji danych (Dysk trzyma je zwykle 30 dni), których teraz nie ma –
+        najczęściej dlatego, że sam je usunąłeś albo wczytałeś na nowo. Nic nie jest zaznaczone: wybierz tylko to, czego brakuje.</p>
+      <p class="muted small" style="margin:0">Przywrócone dostają dopisek „przywrócony z historii” – jeśli to pomyłka, po prostu je usuń.</p>
+      <p id="hs-status" class="small"></p>
+      <ul class="hs-list" id="hs-list"></ul>
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="hs-cancel">Zamknij</button>
+        <button class="btn primary" type="button" id="hs-ok" disabled>Przywróć zaznaczone</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="reload-dlg" aria-labelledby="rl-head">
+    <div class="picker">
+      <h2 id="rl-head">Wczytaj ponownie spis</h2>
+      <p style="margin:0"><b id="rl-title"></b></p>
+      <p class="muted small" style="margin:0">Pozycje zostaną wczytane z pliku od nowa, ale Twoje dopasowania nut zostaną zachowane
+        (rozpoznaję pieśni po tytule i numerze). Nazwa, identyfikator spisu i programy uroczystości zostają.</p>
+      <div class="rl-opts">
+        <button class="btn primary" type="button" data-rl="same" id="rl-same"></button>
+        <button class="btn" type="button" data-rl="drive">Z innego pliku na Dysku…</button>
+        <button class="btn" type="button" data-rl="local">Z pliku z komputera…</button>
+      </div>
+      <div class="dialog-actions"><button class="btn" type="button" data-rl="cancel">Anuluj</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="order-dlg" aria-labelledby="order-title">
+    <div class="picker">
+      <p class="muted small" style="margin:0">Kolejność stron</p>
+      <h2 id="order-title"></h2>
+      <p class="muted small" style="margin:0">Ustaw pliki od pierwszej do ostatniej strony. Kolejność zapisze się przy plikach i zadziała wszędzie:
+        w śpiewnikach, programach, PDF-ach i u chórzystów (po „Aktualizuj”).</p>
+      <ol class="order-list" id="order-list"></ol>
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="order-cancel">Anuluj</button>
+        <button class="btn primary" type="button" id="order-save">Zapisz kolejność</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="edit-dlg" aria-labelledby="ed-title">
+    <form class="picker" method="dialog" id="ed-form">
+      <p class="muted small" style="margin:0">Edytuj plik</p>
+      <h2 id="ed-title"></h2>
+      <p class="muted small ed-path" id="ed-path"></p>
+      <label class="ed-field"><span>Nazwa w aplikacji</span>
+        <input id="ed-name" type="text" maxlength="200" autocomplete="off" enterkeyhint="done"></label>
+      <p class="muted small" style="margin:0">Nazwa i pozostałe ustawienia są tylko w aplikacji – plik na Dysku zostaje bez zmian.</p>
+      <label class="ed-flag"><input type="checkbox" id="ed-notes">
+        <span><b><svg class="ico-nonote" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-nonote"/></svg> To nie nuty</b>
+          <span class="muted small">Plik pomijany przy dopasowaniu do śpiewników, w duplikatach i w „Pozostałych nutach”. Zostaje na liście plików – możesz odznaczyć.</span>
+          <span class="small warn-text" id="ed-notes-why" hidden></span></span></label>
+      <label class="ed-flag"><input type="checkbox" id="ed-ignore">
+        <span><b><svg class="ico-ghost" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ghost"/></svg> Nieistotne</b>
+          <span class="muted small">Nuty, ale niepotrzebne chórzystom: pomijane przy automatycznym dopasowaniu, w duplikatach i w „Pozostałych nutach”.
+            Ręcznie nadal możesz je wybrać do pieśni.</span>
+          <span class="small muted" id="ed-ignore-why" hidden></span></span></label>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="ed-view"><span class="nv-note-ico" aria-hidden="true">♪</span> Podgląd</button>
+        <a class="btn" id="ed-open" target="_blank" rel="noopener"><svg class="ico-drive" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-drive"/></svg> Otwórz na Dysku</a>
+        <button type="button" class="btn" id="ed-cat" title="Tytuł, autorzy, cechy, obrót i pozostałe strony tego utworu">Edytuj w Katalogu</button>
+        <span style="flex:1"></span>
+        <button class="btn" type="button" id="ed-cancel">Anuluj</button>
+        <button class="btn primary" type="submit" id="ed-save">Zapisz</button>
+      </div>
+    </form>
+  </dialog>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-nonote" viewBox="0 0 24 24"><path d="M9.5 18.5a3 3 0 1 1-2-2.83V5.2l10-2.2v11.5a3 3 0 1 1-2-2.83V7.4l-6 1.3z" fill="currentColor"/>
+      <path d="M3.5 3.5l17 17" stroke="var(--panel)" stroke-width="5" stroke-linecap="round"/><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-ghost" viewBox="0 0 24 24"><path d="M4.8 20.6V11a7.2 7.2 0 0 1 14.4 0v9.6q-1.8-2.1-3.6 0t-3.6 0t-3.6 0t-3.6 0z" style="fill:var(--gfill,none);stroke:currentColor;stroke-width:1.7;stroke-linejoin:round"/>
+      <circle cx="9.6" cy="10.4" r="1.25" style="fill:currentColor"/><circle cx="14.4" cy="10.4" r="1.25" style="fill:currentColor"/><ellipse cx="12" cy="14.4" rx="1.05" ry="1.35" style="fill:currentColor"/></symbol>
+    <!-- „otwórz na Dysku Google”: mały znaczek Dysku + strzałka (decyzja użytkownika 2026-11-26) -->
+    <symbol id="i-drive" viewBox="0 0 24 24"><g transform="translate(0 3.4) scale(.78)"><path d="M7.6 3.5h6.8l6.4 11.1h-6.8z" fill="#fbbc04"/>
+      <path d="M7.6 3.5 1.2 14.6l3.4 5.9L11 9.4z" fill="#1fa463"/><path d="M4.6 20.5h12.8l3.4-5.9H8z" fill="#4285f4"/></g>
+      <path d="M16 2.6h5.4V8M21.4 2.6l-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs></svg>
+
+  <dialog id="rot-dlg" aria-labelledby="rot-title">
+    <div class="picker">
+      <p class="muted small" style="margin:0">Obróć nuty</p>
+      <h2 id="rot-title"></h2>
+      <div class="rot-stage"><img id="rot-img" alt="Podgląd nut" hidden><p id="rot-msg" class="muted small"></p></div>
+      <div class="rot-btns">
+        <button type="button" class="btn" data-r="-90">↺ W lewo</button>
+        <button type="button" class="btn" data-r="180">180°</button>
+        <button type="button" class="btn" data-r="90">↻ W prawo</button>
+      </div>
+      <p class="muted small rot-info"><span id="rot-val"></span>. Oryginał na Dysku zostaje bez zmian – obrócone będą nuty u chórzystów i w PDF-ach
+        (po kliknięciu „Aktualizuj” w zakładce „Dla chórzystów”). <a id="rot-open" target="_blank" rel="noopener"><svg class="ico-drive" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-drive"/></svg> Otwórz na Dysku</a></p>
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="rot-cancel">Anuluj</button>
+        <button class="btn primary" type="button" id="rot-save">Zapisz</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="song-picker" aria-labelledby="sp-title">
+    <div class="picker">
+      <h2 id="sp-title">Dodaj pieśń</h2>
+      <input type="search" id="sp-q" class="sb-q" placeholder="Tytuł, numer ze spisu albo nazwa pliku…" autocomplete="off" aria-label="Szukaj pieśni">
+      <ul class="picker-list" id="sp-list"></ul>
+      <div class="dialog-actions"><button class="btn" type="button" id="sp-cancel">Zamknij</button></div>
+    </div>
+  </dialog>
+
+  <div id="guest" class="guest" hidden>
+    <div id="g-view"></div>
+    <p class="g-foot"><button type="button" class="linklike" id="g-admin">Tryb administratora</button></p>
+  </div>
+
+  <div id="g-viewer" class="g-viewer" hidden>
+    <div class="g-vbar">
+      <button type="button" class="g-icon" id="g-close" aria-label="Zamknij nuty">✕</button>
+      <button type="button" class="g-icon" id="g-sprev" aria-label="Poprzednia pieśń" title="Poprzednia pieśń">⏮</button>
+      <div class="g-vtitle"><span id="g-vno"></span> <strong id="g-vname"></strong></div>
+      <button type="button" class="g-icon" id="g-snext" aria-label="Następna pieśń" title="Następna pieśń">⏭</button>
+      <div class="g-vnav" id="g-vnav" hidden>
+        <button type="button" class="g-icon" id="g-prev" aria-label="Poprzednia strona">‹</button>
+        <span id="g-vpos"></span>
+        <button type="button" class="g-icon" id="g-next" aria-label="Następna strona">›</button>
+      </div>
+      <button type="button" class="g-icon g-report" id="g-report" aria-label="Zgłoś problem z nutami" title="Zgłoś problem z nutami" hidden>⚠</button>
+      <a class="g-icon" id="g-open" hidden target="_blank" rel="noopener" aria-label="Otwórz na Dysku Google" title="Otwórz na Dysku Google"><svg class="ico-drive" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-drive"/></svg></a>
+      <button type="button" class="g-icon" id="g-full" aria-label="Pełny ekran" title="Pełny ekran">⛶</button>
+    </div>
+    <div id="g-page" class="g-page" role="region" aria-label="Nuty"></div>
+  </div>
+
+  <!-- podgląd nut administratora (js/preview.js); <dialog>, żeby był nad innymi otwartymi oknami -->
+  <dialog id="a-viewer" class="g-viewer a-viewer" aria-label="Podgląd nut">
+    <div class="g-vbar">
+      <button type="button" class="g-icon" id="a-close" aria-label="Zamknij podgląd" title="Zamknij (Esc)">✕</button>
+      <div class="g-vtitle"><strong id="a-vname"></strong> <span id="a-vsub"></span></div>
+      <span class="a-state" id="a-state"></span>
+      <div class="g-vnav" id="a-vnav" hidden>
+        <button type="button" class="g-icon" id="a-prev" aria-label="Poprzednia strona" title="Poprzednia strona (←)">‹</button>
+        <span id="a-vpos"></span>
+        <button type="button" class="g-icon" id="a-next" aria-label="Następna strona" title="Następna strona (→)">›</button>
+      </div>
+      <a class="g-icon" id="a-open" target="_blank" rel="noopener" aria-label="Otwórz na Dysku Google" title="Otwórz na Dysku Google"><svg class="ico-drive" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-drive"/></svg></a>
+    </div>
+    <div id="a-page" class="g-page"></div>
+  </dialog>
+
+  <dialog id="g-report-dlg" aria-labelledby="gr-title">
+    <form class="picker" method="dialog" id="gr-form">
+      <h2 id="gr-title">Zgłoś problem z nutami</h2>
+      <p style="margin:0"><b id="gr-song"></b><br><span class="muted small" id="gr-src"></span></p>
+      <p class="muted small" style="margin:0">Co jest nie tak? (możesz zaznaczyć kilka)</p>
+      <div class="gr-reasons" id="gr-reasons"></div>
+      <label class="ed-field"><span>Komentarz <span class="muted small">(nieobowiązkowy)</span></span>
+        <textarea id="gr-note" rows="2" maxlength="500" placeholder="np. brakuje drugiej zwrotki"></textarea></label>
+      <label class="ed-field"><span>Twoje imię <span class="muted small">(nieobowiązkowe)</span></span>
+        <input id="gr-name" type="text" maxlength="60" autocomplete="given-name"></label>
+      <p class="small" id="gr-msg" aria-live="polite"></p>
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="gr-cancel">Anuluj</button>
+        <button class="btn primary" type="submit" id="gr-send">Wyślij do dyrygenta</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="chooser" aria-labelledby="chooser-title">
+    <div class="picker">
+      <p class="muted small" style="margin:0">Wybierz nuty dla pozycji:</p>
+      <h2 id="chooser-title"></h2>
+      <input type="search" id="chooser-q" class="sb-q" placeholder="Szukaj innego pliku (nazwa, folder)…" autocomplete="off" aria-label="Szukaj pliku">
+      <ul class="picker-list" id="chooser-list"></ul>
+      <div class="dialog-actions">
+        <span class="muted small" id="chooser-count"></span>
+        <button class="btn" type="button" id="chooser-cancel">Anuluj</button>
+        <button class="btn primary" type="button" id="chooser-save">Zapisz</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="picker" aria-labelledby="picker-title">
+    <div class="picker">
+      <h2 id="picker-title">Wybierz folder z nutami</h2>
+      <nav class="crumbs" id="crumbs" aria-label="Ścieżka"></nav>
+      <ul class="picker-list" id="picker-list"></ul>
+      <div class="dialog-actions">
+        <button class="btn" type="button" id="btn-pick-cancel">Anuluj</button>
+        <button class="btn primary" type="button" id="btn-pick">Dodaj ten folder</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <div class="app-banner" id="install-banner" hidden>
+    <img src="icons/icon-192.png?v=2" alt="" width="40" height="40">
+    <div class="app-banner-text">
+      <strong>Zainstaluj Kamienickie Nutki</strong>
+      <span class="only-prompt">Aplikacja na ekranie głównym, otwiera się jednym stuknięciem.</span>
+      <span class="only-ios">Stuknij <b>Udostępnij</b> <svg class="share-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>, potem <b>Do ekranu początkowego</b>.</span>
+    </div>
+    <button class="btn primary only-prompt" id="btn-install">Zainstaluj</button>
+    <button class="banner-close" id="btn-install-close" aria-label="Nie pokazuj więcej">✕</button>
+  </div>
+  <div class="app-banner" id="update-banner" role="alert" hidden>
+    <div class="app-banner-text">
+      <strong>Dostępna nowa wersja</strong>
+      <span>Twoja praca zostanie zachowana.</span>
+    </div>
+    <button class="btn primary" id="btn-update">Odśwież</button>
+    <button class="btn" id="btn-update-later">Później</button>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/drive.js"></script>
+  <script src="js/catalog.js"></script>
+  <script src="js/zip.js"></script>
+  <script src="js/songlist.js"></script>
+  <script src="js/matcher.js"></script>
+  <script src="js/datamerge.js"></script>
+  <script src="js/noteview.js"></script>
+  <script src="js/preview.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/songs.js"></script>
+  <script src="js/dups.js"></script>
+  <script src="js/works.js"></script>
+  <script src="js/crypto.js"></script>
+  <script src="js/pdfbuild.js"></script>
+  <script src="js/progimport.js"></script>
+  <script src="js/programs.js"></script>
+  <script src="js/publish.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/guest.js"></script>
+  <script src="js/pwa.js"></script>
+</body>
+</html>
